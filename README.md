@@ -2,7 +2,7 @@
 
 **eBayInventoryPro** is a lightweight web application designed to help eBay sellers track their active listings, manage inventory, and streamline item sales tracking. With easy import/export functionality and an intuitive interface, this app simplifies inventory management for eBay businesses.
 
-\color{orange}no time to read all this crap? Just download the "inventoryv5.html" file above. open it in Chrome for the best experience.}$$
+$${\color{orange}no time to read all this crap? Just download the "inventoryv5.html" file above. open it in Chrome for the best experience.}$$
 
 
 ## Features
