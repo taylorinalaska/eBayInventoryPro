@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Counter with Description and Quantity</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #121212; color: #f1f1f1; display: flex; flex-direction: column; align-items: center; height: 100vh; justify-content: flex-start; }
+        button { width:110px;font-size: 14px; padding: 8px 16px; cursor: pointer; color: white; border: none; border-radius: 5px; margin: 5px; transition: background-color 0.3s ease; }
+        button:hover { background-color: #45a049; }
+        .datainput { font-size: 18px; margin-top: 5px; margin-left: 10px; display: flex; justify-content: flex-start; align-items: center; width: 100%; }
+        .datainputtitle { font-size: 14px; padding: 2px 2px; color: white; border: none; border-radius: 5px; margin: 5px;}
+        .datainput input { padding: 8px; font-size: 14px; margin: 5px;}
+        input[type="text"] { width: 400px; padding: 8px; font-size: 14px; margin: 5px 5; background-color: #333; color: #f1f1f1; border: 1px solid #555; border-radius: 5px; }
+        input[type="number"] { width: 50px; padding: 8px; font-size: 14px; margin: 5px 5; background-color: #333; color: #f1f1f1; border: 1px solid #555; border-radius: 5px; }
+        input[type="text"]:focus, input[type="number"]:focus { outline: none; border-color: #4CAF50;}
+        .pagetitle { font-size: 14px; padding: 2px 2px; color: white; border: none; border-radius: 0px; margin-left: 25px; display: flex; justify-content: flex-end; align-items: center; }
+        .container { display: flex; width: 100%; justify-content: space-between; flex-grow: 1; margin: 5px 0; }
+        .inventory-list, .sold-list { flex-grow: 1; margin: 0 10px; background-color: #1e1e1e; border-radius: 8px; padding: 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); overflow-y: auto; width: 45%; }
+        h2 { text-align: center; font-family: 'Poppins', sans-serif; font-weight: bold; font-size: 20px; margin: 0px; }
+        .inventory-item { display: grid; grid-template-columns: 40px 2fr 60px 40px 40px 40px 60px; gap: 10px; padding: 10px; background-color: #333; border-radius: 5px; margin: 8px 0; transition: background-color 0.3s; justify-content: flex-start; align-items: center; }
+        .inventory-item:hover { background-color: #444; }
+        .icon { cursor: pointer; font-size: 24px; color: #f1f1f1; padding: 5px; }
+        .timestamp { font-size: 12px; color: #888; display: flex; justify-content: flex-start; align-items: center; }
+        .sold { color: grey; text-decoration: line-through; }
+        .sold-list .inventory-item .icon:last-child { margin-left: auto; }
+        .checkbox { cursor: pointer; font-size: 24px; color: #f1f1f1; padding: 5px; }
+		
+		/* Modal Styles */
+.modal {
+    display: none;  /* Hidden by default */
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #333;
+    padding: 20px;
+    border: 1px solid #444;
+    width: 50%;
+    max-width: 900px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    cursor: pointer;
+
+}
+
+textarea {
+    margin-top: 10px;
+    padding: 10px;
+    font-size: 14px;
+    background-color: #444;
+    border: 1px solid #222;
+    border-radius: 5px;
+    resize: vertical;
+}
+
+    </style>
+</head>
+<body>
+    <div class="datainput">
+        <div class="datainputtitle">Current Inventory:</div>
+        <input type="number" id="currentInventoryNumber" value="1" class="inventory-number">
+        <div class="datainputtitle">Description:</div>
+        <input type="text" id="description" placeholder="Enter description">
+        
+        <button style="background-color: #E53238;" onclick="increment()">➕ Add</button>
+        <button style="background-color: #0064D2;" onclick="findNextInventoryNumber()">🔍 Next</button>
+        <button style="background-color: #F5A623;" onclick="exportToCSV()">🔻 Save</button>
+        <button style="background-color: #86B817;" onclick="importCSV()">🔺 Restore</button>
+
+        <div class="pagetitle">
+            
+            <span style="padding: 2px 2px; font-family: 'Poppins', sans-serif; font-weight: bold; font-size: 30px;">
+                <span style="color: #E53238;">e</span><span style="color: #0064D2;">b</span><span style="color: #F5A623;">a</span><span style="color: #86B817;">y</span>InventoryPro
+            </span>
+			
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; width: 20%; padding: 5px;">
+            <button style="background-color: #FF9800;" onclick="showHelp()">Help</button>
+            <button style="background-color: #D32F2F;" onclick="clearInventory()">Clear Data</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="inventory-list" id="inventoryList">
+            <h2>Inventory</h2>
+        </div>
+        <div class="sold-list" id="soldList">
+            <h2>Sold Items</h2>
+        </div>
+    </div>
+
+<!-- Help Modal -->
+<!-- Help Modal -->
+<div id="helpModal" class="modal">
+    <div class="modal-content">
+        <h3>How the Inventory Tracker App Works:</h3>
+<p>This app helps you manage your inventory by tracking item descriptions, quantities, and sale status.</p>
+<p>💠 <strong>Add Inventory</strong>: Enter an inventory number (auto-increments), description, and click "➕ Add" to create a new item.</p>
+<p>💠 <strong>Update Quantity</strong>: Adjust quantity directly in the list. Changes save automatically.</p>
+<p>💠 <strong>Mark as Sold</strong>: Click the "💵" icon to decrease available quantity and increase sold quantity.</p>
+<p>💠 <strong>Edit Items</strong>: Click the ✏️ icon to edit an item’s description.</p>
+<p>💠 <strong>Delete Items</strong>: Click the ❌ icon to remove an item from the list.</p>
+<p>💠 <strong>Export/Import</strong>: Save or import a CSV file to manage data (descriptions, quantities, sold quantities).</p>
+<p>💠 <strong>Clear Data</strong>: Click "Clear Data" to remove all inventory data.</p>
+<p>The app stores your inventory in local storage, so data persists even after closing the page.</p>
+
+<h3>How to Download Active Listings from eBay and Import Them:</h3>
+<p><strong>Download Your eBay Active Listings:</strong></p>
+<p>🔶 Go to eBay Seller Hub, click "Reports", select <strong>Source</strong>: Listings and <strong>Type</strong>: All Active Listings. Click "Download" and save the CSV file.</p>
+
+<p><strong>Prepare Your CSV for Import:</strong></p>
+<p>🔶 Open the CSV, ensure it includes: <strong>Item number (SKU)</strong>, <strong>Title (Description)</strong>, and <strong>Quantity Available</strong>. Adjust the format if necessary.</p>
+
+<p><strong>Import to the Inventory Tracker App:</strong></p>
+<p>🔶 In the app, click "🔺 Restore", select the downloaded CSV file, and the app will add the listings to your inventory with unique SKUs.</p>
+
+<p><strong>Review Your Inventory:</strong></p>
+<p>After import, your eBay listings will appear in the Inventory section for editing and updates.</p>
+  <button onclick="closeHelpModal()" style="background-color: #E53238;">Close</button>
+        </div>
+        
+      
+    </div>
+	
+</div>
+
+
+<script>
+    let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+    let currentCount = inventory.length > 0 ? inventory[inventory.length - 1].number + 1 : 1;
+    document.getElementById('currentInventoryNumber').value = currentCount;
+	
+window.onload = function() {
+    // Load inventory from localStorage
+    inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+    currentCount = inventory.length > 0 ? inventory[inventory.length - 1].number + 1 : 1;
+
+    // Update the current inventory number in the input
+    document.getElementById('currentInventoryNumber').value = currentCount;
+
+    // Ensure the description input is cleared
+    document.getElementById('description').value = '';
+
+    // Update the inventory list
+    updateInventoryList();
+};
+
+function editItem(itemNumber) {
+    const item = inventory.find(i => i.number === itemNumber);
+    if (!item) return alert('Item not found.');
+
+    // Prompt the user for a new description (you can customize this as needed)
+    const newDescription = prompt('Enter a new description:', item.description);
+    
+    if (newDescription !== null && newDescription !== '') {
+        item.description = newDescription.trim();
+        localStorage.setItem('inventory', JSON.stringify(inventory));
+        updateInventoryList();  // Refresh the inventory list to show the updated item
+    }
+}
+
+function increment() {
+    const description = document.getElementById('description').value.trim();
+    const currentInventoryNumber = parseInt(document.getElementById('currentInventoryNumber').value);
+
+    if (!description) return alert('Please provide a description.');
+    if (inventory.some(item => item.number === currentInventoryNumber)) return alert('This inventory number exists.');
+
+    const newItem = { 
+        number: currentInventoryNumber, 
+        description, 
+        timestamp: new Date().toLocaleString(), 
+        quantity: 1, 
+        soldQuantity: 0, 
+        shippingStatus: [] 
+    };
+
+    inventory.push(newItem);
+    localStorage.setItem('inventory', JSON.stringify(inventory));
+
+    // Update the current inventory number
+    currentCount = currentInventoryNumber + 1;
+    document.getElementById('currentInventoryNumber').value = currentCount;
+
+    // Update the inventory list
+    updateInventoryList();
+
+    // Clear description input field
+    document.getElementById('description').value = '';
+}
+
+
+    function updateInventoryList() {
+        const inventoryListElement = document.getElementById('inventoryList');
+        const soldListElement = document.getElementById('soldList');
+        inventoryListElement.innerHTML = '<h2>Inventory</h2>';
+        soldListElement.innerHTML = '<h2>Sold Items</h2>';
+
+        [...inventory].reverse().forEach(item => {
+            const listItem = document.createElement('div');
+            listItem.classList.add('inventory-item');
+            listItem.innerHTML = `
+                <span>${item.number}</span>
+                <span>${item.description}</span>
+                <input class="quantity" type="number" value="${item.quantity}" onchange="updateQuantity(${item.number}, this.value)">
+                <span class="icon" onclick="editItem(${item.number})">✏️</span>
+                <span class="icon" onclick="deleteItem(${item.number})">❌</span>
+                <span class="icon" onclick="markAsSold(${item.number})">💵</span>
+                <span class="timestamp">${item.timestamp || 'N/A'}</span>`;
+
+            if (item.quantity === 0) {
+                listItem.classList.add('sold');
+            }
+
+            inventoryListElement.appendChild(listItem);
+        });
+
+        [...inventory.filter(i => i.soldQuantity > 0)].reverse().forEach(item => {
+            for (let i = 0; i < item.soldQuantity; i++) {
+                const listItem = document.createElement('div');
+                listItem.classList.add('inventory-item');
+                listItem.innerHTML = `
+                    <span>${item.number}</span>
+                    <span>${item.description}</span>
+                    <input class="quantity" type="number" value="1" disabled>
+                    <span class="checkbox" onclick="toggleShippingStatus(${item.number}, ${i})">${item.shippingStatus[i] ? '✔️' : '📦'}</span>
+                    <span class="icon" onclick="deleteItem(${item.number})">❌</span>
+                    <span>🔒</span>
+                    <span class="timestamp">Sold</span>`;
+
+                soldListElement.appendChild(listItem);
+            }
+        });
+    }
+
+function findNextInventoryNumber() {
+    let nextAvailableNumber = currentCount;
+
+    // Check if this number already exists in the inventory
+    while (inventory.some(item => item.number === nextAvailableNumber)) {
+        nextAvailableNumber++;  // If it's taken, increment to the next number
+    }
+
+    // Update the input field with the next available number
+    document.getElementById('currentInventoryNumber').value = nextAvailableNumber;
+
+    // Optionally, update the currentCount for future use
+    currentCount = nextAvailableNumber + 1;  // Set it to the next number to keep track
+}
+
+
+    function updateQuantity(number, quantity) {
+        const item = inventory.find(i => i.number === number);
+        item.quantity = parseInt(quantity);
+        localStorage.setItem('inventory', JSON.stringify(inventory));
+        updateInventoryList();
+    }
+
+    function toggleShippingStatus(itemNumber, soldIndex) {
+        const item = inventory.find(i => i.number === itemNumber);
+        item.shippingStatus[soldIndex] = !item.shippingStatus[soldIndex];
+        localStorage.setItem('inventory', JSON.stringify(inventory));
+        updateInventoryList();
+    }
+
+function markAsSold(itemNumber) {
+    const item = inventory.find(i => i.number === itemNumber);
+    if (!item) return alert('Item not found.');
+
+    if (item.quantity > 0) {
+        item.quantity--;  // Decrease quantity by 1
+        item.soldQuantity++;  // Increase sold quantity by 1
+    } else {
+        alert('No available stock to mark as sold.');
+    }
+
+    localStorage.setItem('inventory', JSON.stringify(inventory));
+    updateInventoryList();  // Refresh the inventory list to reflect the changes
+}
+
+    function deleteItem(itemNumber) {
+        inventory = inventory.filter(i => i.number !== itemNumber);
+        localStorage.setItem('inventory', JSON.stringify(inventory));
+        updateInventoryList();
+    }
+
+function clearInventory() {
+    if (confirm('Are you sure you want to clear all data?')) {
+        inventory = [];
+        localStorage.setItem('inventory', JSON.stringify(inventory));
+
+        // Reset current inventory number
+        currentCount = 1;
+        document.getElementById('currentInventoryNumber').value = currentCount;
+
+        updateInventoryList();
+    }
+}
+
+function exportToCSV() {
+    const csvRows = [
+        [
+            "Item number", "Title", "Variation details", "Custom label (SKU)", "Available quantity", "Format", "Currency", 
+            "Start price", "Auction Buy It Now price", "Reserve price", "Current price", "Sold quantity", "Watchers", 
+            "Bids", "Start date", "End date", "eBay category 1 name", "eBay category 1 number", "eBay category 2 name", 
+            "eBay category 2 number", "Condition", "CD:Professional Grader - (ID: 27501)", "CD:Grade - (ID: 27502)", 
+            "CDA:Certification Number - (ID: 27503)", "CD:Card Condition - (ID: 40001)", "eBay Product ID(ePID)", "Listing site", 
+            "P:UPC", "P:EAN", "P:ISBN"
+        ].map(field => `"${field}"`).join(",") // Ensure header fields are quoted
+    ];
+
+    inventory.forEach(item => {
+        const row = [
+            item.number, 
+            item.description, 
+            "", 
+            item.number, 
+            item.quantity, 
+            "", 
+            "USD", 
+            "", 
+            "", 
+            "", 
+            "", 
+            item.soldQuantity, 
+            "", 
+            "", 
+            item.timestamp, 
+            "", 
+            "", 
+            "", 
+            "", 
+            "", 
+            "", 
+            "", 
+            "", 
+            "", 
+            "", 
+            "", 
+            "", 
+            ""
+        ].map(field => `"${field}"`).join(","); // Ensure all fields are quoted
+
+        csvRows.push(row);
+    });
+
+    const csvString = csvRows.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "inventory.csv";
+    link.click();
+}
+
+
+// This function handles the import of a CSV file into the inventory system, with manual field mapping.
+function importCSV() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+
+    input.onchange = event => {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            const content = reader.result;
+            const lines = content.split('\n').map(line => line.trim()).filter(line => line); // Remove empty lines
+
+            const newInventory = [];
+
+            lines.forEach((line, index) => {
+                if (index === 0) return; // Always skip the first line (header row)
+
+                // Advanced CSV parsing: properly handling quoted fields
+                const fields = [];
+                let field = '';
+                let inQuotes = false;
+
+                for (let char of line) {
+                    if (char === '"' && !inQuotes) {
+                        inQuotes = true;
+                    } else if (char === '"' && inQuotes) {
+                        inQuotes = false;
+                    } else if (char === ',' && !inQuotes) {
+                        fields.push(field.trim());
+                        field = '';
+                    } else {
+                        field += char;
+                    }
+                }
+                fields.push(field.trim());
+
+                const sku = fields[3]?.trim() || ''; 
+                const description = fields[1]?.trim() || '';
+                const quantityAvailable = parseInt(fields[4]) || 0;
+                const soldQuantity = parseInt(fields[11]) || 0;
+                const startDate = fields[15] || '';
+                const endDate = fields[16] || '';
+
+                if (!description) return; // Skip rows without a description
+
+                if (sku === '') {
+                    const newItem = {
+                        number: currentCount,
+                        description: description,
+                        timestamp: new Date().toLocaleString(),
+                        quantity: quantityAvailable,
+                        soldQuantity: soldQuantity,
+                        shippingStatus: [],
+                        startDate: startDate,
+                        endDate: endDate
+                    };
+
+                    newInventory.push(newItem);
+                    currentCount++;
+                } else {
+                    if (inventory.some(item => item.number.toString() === sku)) {
+                        alert(`Error: The SKU ${sku} is already taken.`);
+                    } else {
+                        const newItem = {
+                            number: sku,
+                            description: description,
+                            timestamp: new Date().toLocaleString(),
+                            quantity: quantityAvailable,
+                            soldQuantity: soldQuantity,
+                            shippingStatus: [],
+                            startDate: startDate,
+                            endDate: endDate
+                        };
+
+                        newInventory.push(newItem);
+                    }
+                }
+            });
+
+            inventory = newInventory;
+            localStorage.setItem('inventory', JSON.stringify(inventory));
+            updateInventoryList();
+        };
+
+        reader.readAsText(file);
+    };
+
+    input.click();
+}
+
+function showHelp() {
+    const helpModal = document.getElementById('helpModal');
+    helpModal.style.display = 'flex';  // Show the modal
+}
+
+function closeHelpModal() {
+    const helpModal = document.getElementById('helpModal');
+    helpModal.style.display = 'none';  // Hide the modal
+}
+
+
+
+
+</script>
+
+</body>
+</html>
